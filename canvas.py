@@ -9,29 +9,30 @@ class Canvas(QWidget):
         super().__init__()
         self.setMinimumSize(800, 600)
         self.grid_size = 25
-        self.nodes = []
+        self.nodes = [] # List of tuples: (x, y)
         self.connections = [] # List of tuples: ((x1, y1), (x2, y2))
         self.reaction_forces = [] # List of tuples: ((x_start, y_start), (x_end, y_end))
         self.forces = [] # Two touples and force value: ((x_start, y_start), (x_end, y_end), force_value)
         self.unit_vectors_matrix = np.array([]) # Rows: x1, y1, x2, y2; Cols: Unit vectors of each connection
         self.temp_vectors_matrix = np.array([]) # Rows: x1, y1, x2, y2; Cols: Temporary vectors for reaction forces
         self.memeber_forces_array = np.array([]) # Force values for each member
-        self.temp_connection_start = None
-        self.temp_connection_end = None
-        self.force_endpoint = None
-        self.currentMode = "placeNode"
-        self.setMouseTracking(True)
-        self.preview_node = None
-        self.activePopup = None
+        self.temp_connection_start = None # Tuple: (x, y)
+        self.temp_connection_end = None # Tuple: (x, y)
+        self.force_endpoint = None # Tuple: (x, y)
+        self.currentMode = "placeNode" # Current mode based on toolbar button pressed.
+        self.preview_node = None # Tuple: (x, y)
+        self.preview_connection = None # Two tuples: ((x1, y1), (x2, y2))
+        self.activePopup = None # Status of force input popup
         
-        self.offset = QPoint(0, 0)       # Current pan offset
-        self.zoom = 1.0                   # Zoom factor
+        self.setMouseTracking(True)
+        self.offset = QPoint(0, 0) # Current pan offset
+        self.zoom = 1.0 # Zoom factor
         self.min_zoom = 0.2
         self.max_zoom = 5.0
-        self.last_mouse_pos = None        # For dragging
-        self.panning = False
+        self.last_mouse_pos = None # For dragging
+        self.panning = False # When the user is panning
 
-
+    # Paints canvas with all items
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -87,6 +88,7 @@ class Canvas(QWidget):
             self.draw_arrow(painter, QPoint(self.temp_connection_start[0], self.temp_connection_start[1]),
                             QPoint(self.temp_connection_end[0], self.temp_connection_end[1]))
 
+        # Draw temporary applied force arrow
         if self.temp_connection_start and self.temp_connection_end and (self.currentMode == "applyForce"):
             if self.force_endpoint is None:
                 painter.setPen(QPen(Qt.yellow, 3, Qt.DashLine))
@@ -108,6 +110,7 @@ class Canvas(QWidget):
             painter.setPen(QPen(Qt.cyan, 15))
             painter.drawPoint(QPoint(self.preview_node[0], self.preview_node[1]))
 
+        # Draw calculated member forces
         if self.currentMode == "visualizeForces" and hasattr(self, "member_forces_array"):
             painter.setPen(QPen(Qt.magenta, 4))
 
@@ -128,7 +131,7 @@ class Canvas(QWidget):
                 painter.setPen(QPen(Qt.white, 2))
                 painter.drawText(mid_x + 10, mid_y - 10, f"{value:.2f} N")
 
-
+    # Draws an arrow from start point to end point
     def draw_arrow(self, painter, start, end):
         painter.drawLine(start, end)
         # Draw arrowhead
@@ -139,6 +142,7 @@ class Canvas(QWidget):
         painter.drawLine(end, p1)
         painter.drawLine(end, p2)
 
+    # Draws a shortened arrow from start to end
     def draw_short_arrow(self, painter, start, end):
         sx, sy = float(start.x()), float(start.y())
         ex, ey = float(end.x()), float(end.y())
@@ -169,6 +173,7 @@ class Canvas(QWidget):
         painter.drawLine(QPointF(ex2, ey2), p1)
         painter.drawLine(QPointF(ex2, ey2), p2)
 
+    # Handles functions when the user clicks mouse.
     def mousePressEvent(self, event):
         if hasattr(self, "activePopup") and self.activePopup is not None:
             return
@@ -276,7 +281,7 @@ class Canvas(QWidget):
             elif self.currentMode == "visualizeForces":
                 pass  # Placeholder for visualize forces logic
         
-
+    # Handles events when the mouse moves.
     def mouseMoveEvent(self, event):
         if self.panning and self.last_mouse_pos is not None:
             delta = event.position() - self.last_mouse_pos  # QPointF
@@ -328,6 +333,7 @@ class Canvas(QWidget):
                 self.temp_connection_end = (x, y)
             self.update()
 
+    # Handles when the user presses escape in the popup
     def eventFilter(self, obj, event):
         if hasattr(self, "activePopup") and obj == self.activePopup:
             if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Escape:
@@ -336,11 +342,13 @@ class Canvas(QWidget):
                 return True
         return super().eventFilter(obj, event)
 
+    # Handles when the user is done panning
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MiddleButton:
             self.panning = False
             self.setCursor(Qt.ArrowCursor)
 
+    # Handles when the user zooms in or out
     def wheelEvent(self, event):
         angle = event.angleDelta().y()
         factor = 1.2 if angle > 0 else 1 / 1.2
@@ -354,6 +362,7 @@ class Canvas(QWidget):
         self.offset = mouse_pos - before_scale * self.zoom
         self.update()
 
+    # Changes current mode and resets temporary variables.
     def set_mode(self, mode):
         self.currentMode = mode
         self.temp_connection_start = None
@@ -365,6 +374,7 @@ class Canvas(QWidget):
 
         self.update()
 
+    # Maps coordinates to canvas coordinates based on current zoom.
     def map_to_canvas(self, pos):
         x = (pos.x() - self.offset.x()) / self.zoom
         y = (pos.y() - self.offset.y()) / self.zoom
@@ -373,7 +383,7 @@ class Canvas(QWidget):
         return x, y
 
 
-
+    # Popup activates for user to enter force value.
     def showForceInput(self, x, y, callback):
         popup = QLineEdit(self)
         popup.setPlaceholderText("Force (N)")
@@ -417,6 +427,7 @@ class Canvas(QWidget):
         popup._cancel_function = cancel
         self.activePopup = popup
 
+    # Generates matrix of unit vectors for each nodes (row) to their respective connections (column)
     def generate_matrix(self):
         c = len(self.connections) + len(self.reaction_forces)
         n = len(self.nodes)
@@ -486,6 +497,7 @@ class Canvas(QWidget):
             matrix[2*idx + 1][j] = uy
         return matrix
         
+    # Creates array of all applied forces.
     def generate_force_array(self):
         n = len(self.nodes)
         rows = 2 * n
@@ -518,6 +530,7 @@ class Canvas(QWidget):
             force_array[2*idx + 1][0] += Fy
         return force_array
 
+    # Calculates tension and compression forces in each connection.
     def calculate_supports(self):
         A = self.generate_matrix()
         F = self.generate_force_array()

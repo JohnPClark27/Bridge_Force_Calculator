@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QPushButton
 
+# Debug Panel for testing
 class DebugPanel(QWidget):
     def __init__(self):
         super().__init__()

@@ -1,22 +1,27 @@
+# App.py
+# Description: Main application file for truss analysis software using PySide6.
+# Author: John Clark
+# Date: 12/1/2025
+
 from PySide6.QtWidgets import QApplication, QMainWindow, QToolBar, QHBoxLayout, QWidget
 from PySide6.QtGui import QAction
 from debugpanel import DebugPanel
 import sys
-
 from canvas import Canvas
 
+# Class for main window
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Statics Software")
       
-
+        # Initial values
         WIDTH = 800
         HEIGHT = 600
         self.setMinimumSize(WIDTH, HEIGHT)
-
         self.currentMode = "placeNode"
 
+        # Initialize canvas and widget items
         self.canvas = Canvas()
         container = QWidget()
         layout = QHBoxLayout()
@@ -27,6 +32,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
         self.canvas.set_mode(self.currentMode)
 
+        # Connect debug buttons
         self.debug_panel.btn_matrix.clicked.connect(self.show_matrix)
         self.debug_panel.btn_forces.clicked.connect(self.show_force_vector)
         self.debug_panel.btn_solution.clicked.connect(self.show_solution_vector)
@@ -34,7 +40,9 @@ class MainWindow(QMainWindow):
         self.debug_panel.btn_reactions.clicked.connect(self.show_reaction_forces)
         self.debug_panel.btn_applied.clicked.connect(self.show_applied_forces)
 
+        self.debug_panel.hide()
 
+        # Create toolbar and actions
         toolbar = QToolBar("Main Toolbar")
         self.addToolBar(toolbar)
 
@@ -64,6 +72,7 @@ class MainWindow(QMainWindow):
         visualizeForces.triggered.connect(self.visualize_forces)
         debugPanel.triggered.connect(self.toggle_debug_panel)
 
+    # Actions for toolbar buttons
     def place_node(self):
         print("Place Node action triggered")
         self.currentMode = "placeNode"
@@ -94,6 +103,13 @@ class MainWindow(QMainWindow):
         self.currentMode = "visualizeForces"
         self.canvas.set_mode(self.currentMode)
 
+    def toggle_debug_panel(self):
+        if self.debug_panel.isVisible():
+            self.debug_panel.hide()
+        else:
+            self.debug_panel.show()
+
+    # Actions for debug panel
     def show_matrix(self):
         A = self.canvas.generate_matrix()
         self.debug_panel.display(str(A))
@@ -117,12 +133,8 @@ class MainWindow(QMainWindow):
     def show_applied_forces(self):
         self.debug_panel.display(str(self.canvas.forces))
 
-    def toggle_debug_panel(self):
-        if self.debug_panel.isVisible():
-            self.debug_panel.hide()
-        else:
-            self.debug_panel.show()
-
+    
+# Start
 app = QApplication(sys.argv)
 window = MainWindow()
 window.show()

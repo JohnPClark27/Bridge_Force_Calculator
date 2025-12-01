@@ -1,3 +1,5 @@
+% Truss Analysis Code provided by Professor Mercado.
+
 clear
 close all
 %Assume all force directions as tension
