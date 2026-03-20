@@ -15,7 +15,7 @@ class Canvas(QWidget):
         self.forces = [] # Two touples and force value: ((x_start, y_start), (x_end, y_end), force_value)
         self.unit_vectors_matrix = np.array([]) # Rows: x1, y1, x2, y2; Cols: Unit vectors of each connection
         self.temp_vectors_matrix = np.array([]) # Rows: x1, y1, x2, y2; Cols: Temporary vectors for reaction forces
-        self.memeber_forces_array = np.array([]) # Force values for each member
+        self.member_forces_array = np.array([]) # Force values for each member
         self.temp_connection_start = None # Tuple: (x, y)
         self.temp_connection_end = None # Tuple: (x, y)
         self.force_endpoint = None # Tuple: (x, y)
