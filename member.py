@@ -3,10 +3,12 @@ from PySide6.QtGui import QPen
 from node import Node
 
 class Member:
-    def __init__(self, node1, node2):
+    def __init__(self, node1, node2, id=None):
         self.node1 = node1
         self.node2 = node2
-        self.id = None
+        self.node1_id = node1.id
+        self.node2_id = node2.id
+        self.id = id
         self.color = Qt.white
         self.temp_line = False
 
@@ -36,8 +38,3 @@ class Member:
 
         distance = ((closest[0] - px) ** 2 + (closest[1] - py) ** 2) ** 0.5
         return distance < 3
-    
-
-line = Member(Node(0,0), Node(100,100))
-print(line.is_touching(QPointF(50,50))) # Should be True
-print(line.is_touching(QPointF(10,15))) # Should be False
