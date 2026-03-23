@@ -53,7 +53,7 @@ class Canvas(QWidget):
             painter.drawLine(-1000, y, w+1000, y)
 
         # Draw connections
-        painter.setPen(QPen(Qt.white, 5))
+        painter.setPen(QPen(Qt.white, 4))
         for ((x1, y1), (x2, y2)) in self.connections:
             painter.drawLine(x1, y1, x2, y2)
 
@@ -122,9 +122,11 @@ class Canvas(QWidget):
 
                 painter.setPen(QPen(Qt.magenta, 4))
                 if value > 0:
+                    painter.setPen(QPen(Qt.blue, 4))
                     self.draw_short_arrow(painter, QPoint(x1, y1), QPoint((x1+x2)//2, (y1+y2)//2))
                     self.draw_short_arrow(painter , QPoint(x2, y2), QPoint((x1+x2)//2, (y1+y2)//2))
                 else:
+                    painter.setPen(QPen(Qt.red, 4))
                     self.draw_short_arrow(painter, QPoint((x1+x2)//2, (y1+y2)//2), QPoint(x1,y1))
                     self.draw_short_arrow(painter, QPoint((x1+x2)//2, (y1+y2)//2), QPoint(x2,y2))
 
@@ -401,6 +403,7 @@ class Canvas(QWidget):
         self.activePopup = popup
 
         def submit():
+            print("Submit pressed in force input popup")
             text = popup.text().strip()
             if text == "":
                 return
@@ -416,12 +419,12 @@ class Canvas(QWidget):
             callback(value)
         
         def cancel():
+            print("Canceling force input popup")
             popup.deleteLater()
             self.activePopup = None
             callback(None)
 
         popup.returnPressed.connect(submit)
-        popup.editingFinished.connect(cancel)
         popup.installEventFilter(self)
 
         popup._cancel_function = cancel
@@ -447,32 +450,12 @@ class Canvas(QWidget):
                 continue
             ux = dx / length
             uy = dy / length
-            # Fix outputs so they are correct sign
-            if x1 >= x2 and y2 >= y1:
-                matrix[2*idx1][j] = -abs(ux)
-                matrix[2*idx1 + 1][j] = -abs(uy)
-                matrix[2*idx2][j] = abs(ux)
-                matrix[2*idx2 + 1][j] = abs(uy)
-            elif x1 <= x2 and y2 >= y1:
-                matrix[2*idx1][j] = abs(ux)
-                matrix[2*idx1 + 1][j] = -abs(uy)
-                matrix[2*idx2][j] = -abs(ux)
-                matrix[2*idx2 + 1][j] = abs(uy)
-            elif x1 >= x2 and y2 <= y1:
-                matrix[2*idx1][j] = -abs(ux)
-                matrix[2*idx1 + 1][j] = abs(uy)
-                matrix[2*idx2][j] = abs(ux)
-                matrix[2*idx2 + 1][j] = -abs(uy)
-            elif x1 <= x2 and y2 <= y1:
-                matrix[2*idx1][j] = abs(ux)
-                matrix[2*idx1 + 1][j] = abs(uy)
-                matrix[2*idx2][j] = -abs(ux)
-                matrix[2*idx2 + 1][j] = -abs(uy)
-            else:
-                matrix[2*idx1][j] = -ux
-                matrix[2*idx1 + 1][j] = -uy
-                matrix[2*idx2][j] = ux
-                matrix[2*idx2 + 1][j] = uy
+
+            matrix[2*idx1][j] = ux
+            matrix[2*idx1 + 1][j] = uy
+            matrix[2*idx2][j] = -ux
+            matrix[2*idx2 + 1][j] = -uy
+
 
         
         for j, ((x_start, y_start), (x_end, y_end)) in enumerate(self.reaction_forces, start=len(self.connections)):
@@ -543,3 +526,5 @@ class Canvas(QWidget):
         except np.linalg.LinAlgError:
             print("Matrix is singular, cannot compute supports.")
             return None
+
+        
