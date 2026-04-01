@@ -14,16 +14,9 @@ class Canvas(QWidget):
     def __init__(self):
         super().__init__()
         self.setMinimumSize(800, 600)
+        self.setFocusPolicy(Qt.StrongFocus)
         self.grid_size = 25
-        self.nodes = []
-        self.members = []
-        self.applied_forces = []
-        self.reaction_forces = []
-        self.temp_node = None
-        self.temp_member = None
-        self.temp_applied_force = None
-        self.temp_reaction_force = None
-        self.placeholder = None # Temp node to hold position data on force input
+        self.objectTypes = ["placeNode", "placeMember", "reactionForce", "applyForce"]
         self.mode = "placeNode"
         self.id_counter = 1
         self.model = State()
@@ -36,6 +29,8 @@ class Canvas(QWidget):
         self.max_zoom = 5.0
         self.last_mouse_pos = None # For dragging
         self.panning = False # When the user is panning
+
+        self.activePopup = None
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -56,10 +51,12 @@ class Canvas(QWidget):
         for y in range(-1000, h+1000, self.grid_size):
             painter.drawLine(-1000, y, w+1000, y)
 
-        self.model.paint_objects(painter)
-        
+        self.pending.paint(painter) if self.pending is not None else None
 
-        
+        self.model.paint_objects(painter)
+
+        painter.end()
+
     def set_mode(self, mode):
         self.mode = mode
         self.temp_node = None
@@ -67,7 +64,15 @@ class Canvas(QWidget):
         self.temp_applied_force = None
         self.temp_reaction_force = None
 
+        self.pending = None
+
+        if self.mode == "visualizeForces":
+            self.model.show_forces()
+        else:
+            self.model.stop_showing_forces()
+
         self.update()
+
     def mousePressEvent(self, event):
         x,y = self.map_to_grid(event.position())
         if hasattr(self, "activePopup") and self.activePopup is not None:
@@ -82,19 +87,39 @@ class Canvas(QWidget):
         self.update()
 
     def handle_click(self, pos):
-        node = self.model.get_node_at(pos)
+        if self.mode in self.objectTypes:
+            node = self.model.get_node_at(pos)
 
-        if self.pending is None:
-            self.pending = self.mode_to_object()
-            
-        self.pending.set_endpoint(node,pos)
+            if self.pending is None:
+                self.pending = self.mode_to_object()
+                
+            self.pending.set_endpoint(node,pos)
 
-        if self.pending.is_complete():
-            self.model.add_object(self.pending)
-            self.pending = None
+            if self.pending.is_complete():
+                if isinstance(self.pending, AppliedForce):
+                    def callback(value):
+                        if value is not None:
+                            self.pending.force = value
+                            self.model.add_object(self.pending)
+                            self.update()
+                        self.pending = None
+
+                    self.showForceInput(pos[0], pos[1], callback)
+                else:
+                    self.model.add_object(self.pending)
+                    self.pending = None
+                self.update()
+
+        else:
+            if self.mode == "deleteNode":
+                node = self.model.get_node_at(pos)
+
+                if node != None:
+                    self.model.delete(node)
 
     def mode_to_object(self):
         self.id_counter += 1
+        
         if self.mode == "placeNode":
             return Node(id = self.id_counter)
         elif self.mode == "placeMember":
@@ -107,15 +132,97 @@ class Canvas(QWidget):
 
         
     def mouseMoveEvent(self, event):
-        pass
+        x, y = self.map_to_grid(event.position())
+        if self.panning:
+            delta = event.position() - self.last_mouse_pos  # QPointF
+            self.offset = QPointF(self.offset.x() + delta.x(), self.offset.y() + delta.y())
+            self.last_mouse_pos = event.position()
+            self.update()
+            return
+        if self.pending is not None:
+            self.pending.move_endpoint(self.node_at_pos((x,y)), (x,y))
+            self.update()
+        else:
+            if self.mode in self.objectTypes:
+                self.pending = self.mode_to_object()
+                self.pending.move_endpoint(self.node_at_pos((x,y)), (x,y))
+                self.update()
+
+
     def mouseReleaseEvent(self, event):
-        pass
-    def eventFilter(self, source, event):
-        pass
+        if event.button() == Qt.MiddleButton:
+            self.panning = False
+            self.setCursor(Qt.ArrowCursor)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            if hasattr(self, "activePopup") and self.activePopup is not None:
+                self.activePopup._cancel_function()
+                self.activePopup = None
+                return True
+            else:
+                self.set_mode("none")
+                return True
+
+        return super().keyPressEvent(event)
+
     def wheelEvent(self, event):
-        pass
-    def showForceInput(self, pos):
-        pass
+        angle = event.angleDelta().y()
+        factor = 1.2 if angle > 0 else 1 / 1.2
+
+        mouse_pos = event.position()
+        before_scale = (mouse_pos - self.offset) / self.zoom
+
+        self.zoom *= factor
+        self.zoom = max(self.min_zoom, min(self.max_zoom, self.zoom))
+
+        self.offset = mouse_pos - before_scale * self.zoom
+        self.update()
+
+    # Popup activates for user to enter force value.
+    def showForceInput(self, x, y, callback):
+        popup = QLineEdit(self)
+        popup.setPlaceholderText("Force (N)")
+        popup.setFixedWidth(100)
+
+
+        popup.move(int(x+10), int(y+10))
+        popup.show()
+
+        popup.setAttribute(Qt.WA_InputMethodEnabled, True)
+        popup.setFocusPolicy(Qt.StrongFocus)
+
+        QTimer.singleShot(0, lambda: popup.setFocus())
+
+        self.activePopup = popup
+
+        def submit():
+            text = popup.text().strip()
+            if text == "":
+                return
+            
+            try:
+                value = float(text)
+            except  ValueError:
+                popup.setText("")
+                return
+
+            popup.deleteLater()
+            self.activePopup = None
+            callback(value)
+        
+        def cancel():
+            popup.deleteLater()
+            self.activePopup = None
+            callback(None)
+
+        popup.returnPressed.connect(submit)
+        popup.editingFinished.connect(cancel)
+        popup.installEventFilter(self)
+
+        popup._cancel_function = cancel
+        self.activePopup = popup
+
     def generate_matrix(self):
         pass
     def generate_force_array(self):
@@ -124,7 +231,7 @@ class Canvas(QWidget):
         pass
 
     def node_at_pos(self, pos):
-        for node in self.nodes:
+        for node in self.model.nodes:
             if node.is_touching(pos):
                 return node
         return None

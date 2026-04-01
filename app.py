@@ -9,6 +9,7 @@ from debugpanel import DebugPanel
 import sys
 from canvas import Canvas
 
+
 # Class for main window
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -96,27 +97,27 @@ class MainWindow(QMainWindow):
 
     # Actions for debug panel
     def show_matrix(self):
-        A = self.canvas.generate_matrix()
+        A = self.canvas.model.generate_matrix()
         self.debug_panel.display(str(A))
     def show_force_vector(self):
-        F = self.canvas.generate_force_array()
+        F = self.canvas.model.generate_force_array()
         self.debug_panel.display(str(F))
 
     def show_solution_vector(self):
-        if hasattr(self.canvas, 'member_forces_array'):
-            X = self.canvas.member_forces_array
+        
+            X = self.canvas.model.calculate_supports()
             self.debug_panel.display(str(X))
-        else:
-            self.debug_panel.display("No solution vector available.")
+        
+            #self.debug_panel.display("No solution vector available.")
 
     def show_connections(self):
-        self.debug_panel.display(str(self.canvas.connections))
+        self.debug_panel.display(str(self.canvas.model.members))
 
     def show_reaction_forces(self):
-        self.debug_panel.display(str(self.canvas.reaction_forces))
+        self.debug_panel.display(str(self.canvas.model.reaction_forces))
 
     def show_applied_forces(self):
-        self.debug_panel.display(str(self.canvas.forces))
+        self.debug_panel.display(str(self.canvas.model.applied_forces))
 
     
 # Start

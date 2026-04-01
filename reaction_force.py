@@ -4,40 +4,78 @@ from node import Node
 from arrow import arrow
 
 class ReactionForce:
-    def __init__(self, node1, node2, magnitude, id = None):
-        self.node1 = node1
-        self.node2 = node2
+    def __init__(self,id = None):
+        self.endnode = None
+
+        self.tempnode = Node(id = 0)
+
+        self.endpoint = Node(id = 0)
         
-        self.magnitude = magnitude # 1 node 1 to node 2, -1 node 2 to node 1
+        self.magnitude = 1 # 1 node 1 to node 2, -1 node 2 to node 1
         self.id = id
         self.color = Qt.green
         self.temp_line = False
 
+        self.endnodeSet = False
+        self.endpointSet = False
+
     def __eq__(self, other):
         if not isinstance(other, ReactionForce):
             return NotImplemented
-        return (self.node1 == other.node1 and self.node2 == other.node2) or (self.node1 == other.node2 and self.node2 == other.node1)
+        return self.endnode == other.endnode and self.endpoint == other.endpoint
+
+    def set_endpoint(self, node, pos):
+        if node is not None:
+            if self.endnodeSet == False:
+                self.endnode = node
+                if self.endpointSet == False:
+                    self.magnitude = 1
+                self.endnodeSet = True
+        else:
+            if self.endpointSet == False:
+                self.endpoint.move_endpoint(node, pos)
+                if self.endnodeSet == False:
+                    self.magnitude = -1
+                self.endpointSet = True
+            
+
+    def move_endpoint(self, node, pos):
+        if self.endnodeSet == False:
+            self.tempnode.move_endpoint(node, pos)
+            self.endnode = self.tempnode
+        if self.endpointSet == False:
+            self.endpoint.move_endpoint(node, pos)
+
+    def is_complete(self):
+        return self.endnodeSet and self.endpointSet
+
 
     def paint(self, painter):
-        x1 = self.node1.position.x()
-        y1 = self.node1.position.y()
-        x2 = self.node2.position.x()
-        y2 = self.node2.position.y()
-        
-        if (self.temp_line):
+        if (self.is_complete() == False):
             painter.setPen(QPen(Qt.yellow, 3, Qt.DashLine))
         else:
             painter.setPen(QPen(self.color, 3))
-        if self.magnitude == 1:
-            arrow(x1, y1, x2, y2, 1).paint(painter)
-        else:  
-            arrow(x1, y1, x2, y2, -1).paint(painter)
+
+        if self.endnode is not None and self.endpoint is not None:
+            x1 = self.endnode.position[0]
+            y1 = self.endnode.position[1]
+            x2 = self.endpoint.position[0]
+            y2 = self.endpoint.position[1]
+
+            if self.magnitude == 1:
+                arrow(x1, y1, x2, y2, 1).paint(painter)
+            else:  
+                arrow(x1, y1, x2, y2, -1).paint(painter)
+        elif self.endpoint is None and self.endnode is not None:
+            painter.drawLine(self.endnode.QPoint, self.endnode.QPoint)
+        elif self.endpoint is not None and self.endnode is None:
+            painter.drawLine(self.endpoint.QPoint, self.endpoint.QPoint)
 
     def is_touching(self, pos):
-        x1 = self.node1.position.x()
-        y1 = self.node1.position.y()
-        x2 = self.node2.position.x()
-        y2 = self.node2.position.y()
+        x1 = self.endnode.position[0]
+        y1 = self.endnode.position[1]
+        x2 = self.endpoint.position[0]
+        y2 = self.endpoint.position[1]
 
         px, py = pos.x(), pos.y()
 
