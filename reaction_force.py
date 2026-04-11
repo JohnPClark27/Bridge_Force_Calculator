@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt, QPoint, QEvent, QTimer, QPointF
 from PySide6.QtGui import QPen
 from node import Node
 from arrow import arrow
+from PySide6.QtGui import QPainter, QPen, QColor
 
 class ReactionForce:
     def __init__(self,id = None):
@@ -13,7 +14,7 @@ class ReactionForce:
         
         self.magnitude = 1 # 1 node 1 to node 2, -1 node 2 to node 1
         self.id = id
-        self.color = Qt.green
+        self.color = QColor(100,60,200)
         self.temp_line = False
 
         self.endnodeSet = False
@@ -52,7 +53,7 @@ class ReactionForce:
 
     def paint(self, painter):
         if (self.is_complete() == False):
-            painter.setPen(QPen(Qt.yellow, 3, Qt.DashLine))
+            painter.setPen(QPen(self.color, 3, Qt.DashLine))
         else:
             painter.setPen(QPen(self.color, 3))
 

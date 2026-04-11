@@ -39,7 +39,7 @@ class Canvas(QWidget):
         painter.translate(self.offset)
         painter.scale(self.zoom, self.zoom)
 
-        pen = QPen(QColor(50, 50, 50))
+        pen = QPen(QColor(210, 210, 210))
         painter.setPen(pen)
 
         w = self.width()
@@ -59,10 +59,6 @@ class Canvas(QWidget):
 
     def set_mode(self, mode):
         self.mode = mode
-        self.temp_node = None
-        self.temp_member = None
-        self.temp_applied_force = None
-        self.temp_reaction_force = None
 
         self.pending = None
 

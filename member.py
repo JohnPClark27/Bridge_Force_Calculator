@@ -1,7 +1,8 @@
-from PySide6.QtCore import Qt, QPoint, QEvent, QTimer, QPointF
+from PySide6.QtCore import Qt, QPoint, QEvent, QTimer, QPointF, QRectF
 from PySide6.QtGui import QPen
 from node import Node
 from arrow import arrow
+from PySide6.QtGui import QPainter, QPen, QColor
 
 class Member:
     def __init__(self, id = None):
@@ -11,7 +12,7 @@ class Member:
         self.node2_id = None
         self.temp_node = Node(id = 0)
         self.id = id
-        self.color = Qt.white
+        self.color = Qt.black
         self.node1Complete = False
         self.node2Complete = False
         
@@ -26,8 +27,8 @@ class Member:
         return (self.node1 == other.node1 and self.node2 == other.node2) or (self.node1 == other.node2 and self.node2 == other.node1)
 
     def paint(self, painter):
-        if (not self.is_complete()):
-            painter.setPen(QPen(Qt.yellow, 3, Qt.DashLine))
+        if not self.is_complete():
+            painter.setPen(QPen(Qt.black, 3, Qt.DashLine))
         else:
             painter.setPen(QPen(self.color, 3))
 
@@ -37,7 +38,7 @@ class Member:
             painter.drawLine(self.node1.QPoint, self.node1.QPoint)
 
         # Visualize Force
-        if self.visualize_force == True:
+        if self.visualize_force:
             x1, y1 = self.node1.position
             x2, y2 = self.node2.position
 
@@ -46,14 +47,14 @@ class Member:
 
             if self.visualize_method == "line":
                 if self.max_force != 0:
-                    scaler = (abs(self.force)/self.max_force) * 6
+                    scaler = float((abs(self.force[0])/self.max_force[0]) * 6)
                 else:
                     scaler = 0
 
                 if self.force < 0:
-                    painter.setPen(QPen(Qt.red, 3 + scaler))
+                    painter.setPen(QPen(QColor(200,50,50), 3 + scaler))
                 else:
-                    painter.setPen(QPen(Qt.blue, 3 + scaler))
+                    painter.setPen(QPen(QColor(50,100,210), 3 + scaler))
                 painter.drawLine(self.node1.QPoint, self.node2.QPoint)
             elif self.visualize_method == "arrow":
                 
@@ -66,14 +67,19 @@ class Member:
                     arrow(mid_x,mid_y,x1,y1,1).paint(painter)
                     arrow(mid_x, mid_y,x2,y2,1).paint(painter)
 
-            painter.setPen(QPen(Qt.white, 2))
-            painter.drawText(mid_x + 10, mid_y - 10, f"{self.force[0]:.2f} N")
+            painter.setPen(QPen(Qt.black, 2))
+            font = painter.font()
+            font.setBold(True)
+            painter.setFont(font)
+
+            rect = QRectF(mid_x - 50, mid_y - 10, 100, 20)
+            painter.drawText(rect, Qt.AlignCenter, f"{self.force[0]:.2f} N")
 
 
 
     def set_endpoint(self, node, pos):
         if node is not None:
-            if self.node1Complete == False:
+            if not self.node1Complete:
                 self.node1 = node
                 self.node1_id = node.id
                 self.node1Complete = True
@@ -84,17 +90,17 @@ class Member:
 
     def move_endpoint(self, node, pos):
         if node is not None:
-            if self.node1Complete == False:
+            if not self.node1Complete:
                 self.node1 = node
                 self.node1_id = node.id
-            elif self.node2Complete == False:
+            elif not self.node2Complete:
                 self.node2 = node
                 self.node2_id = node.id
         else:
-            if self.node1Complete == False:
+            if not self.node1Complete:
                 self.temp_node.move_endpoint(node, pos)
                 self.node1 = self.temp_node
-            elif self.node2Complete == False:
+            elif not self.node2Complete:
                 self.temp_node.move_endpoint(node, pos)
                 self.node2 = self.temp_node
 

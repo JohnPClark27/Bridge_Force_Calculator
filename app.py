@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
 
         #initial values
         WIDTH = 800
-        HEIGHT = 600
+        HEIGHT = 800
         self.setMinimumSize(WIDTH, HEIGHT)
 
         self.canvas = Canvas()
@@ -43,6 +43,7 @@ class MainWindow(QMainWindow):
 
         # Create toolbar and actions
         toolbar = QToolBar("Main Toolbar")
+        toolbar.setMinimumHeight(50)
         self.addToolBar(toolbar)
 
         placeNode = QAction("Place Node", self)
@@ -64,12 +65,39 @@ class MainWindow(QMainWindow):
 
 
         placeNode.triggered.connect(self.place_node)
+
         deleteNode.triggered.connect(self.delete_node)
         connectNode.triggered.connect(self.connect_node)
         reactionForce.triggered.connect(self.reaction_force)
         applyForce.triggered.connect(self.apply_force)
         visualizeForces.triggered.connect(self.visualize_forces)
         debugPanel.triggered.connect(self.toggle_debug_panel)
+
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #f5f5f5;
+            }
+            QToolBar {
+                background-color: #ffffff;
+                border-bottom: 1px solid #cccccc;
+                padding: 4px;
+                spacing: 6px;
+            }
+            QToolBar QToolButton {
+                color: #222222;
+                background-color: #ffffff;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 4px 8px;
+            }
+            QToolBar QToolButton:hover {
+                background-color: #e8e8e8;
+            }
+            QToolBar QToolButton:pressed {
+                background-color: #d0d0d0;
+            }
+        """)
+        self.canvas.setStyleSheet("background-color: #ffffff;")
 
     def place_node(self):
         self.canvas.set_mode("placeNode")

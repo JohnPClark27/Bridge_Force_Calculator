@@ -21,6 +21,7 @@ class State:
         if isinstance(obj, Node):
             if obj not in self.nodes:
                 self.nodes.append(obj)
+                obj.label = chr(65 + self.nodes.index(obj))
         elif isinstance(obj, Member):
             if obj not in self.members:
                 self.members.append(obj)

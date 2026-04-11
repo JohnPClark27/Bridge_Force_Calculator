@@ -7,6 +7,7 @@ class Node:
         self.QPoint = None
         self.id = id
         self.complete = False
+        self.label = ""
 
     def __eq__(self, other): # Compare nodes by position
         if not isinstance(other, Node):
@@ -34,6 +35,11 @@ class Node:
             else:
                 painter.setPen(QPen(Qt.red, 15))
             painter.drawPoint(self.QPoint)
+        painter.setPen(QPen(Qt.black, 2))
+        font = painter.font()
+        font.setBold(True)
+        painter.setFont(font)
+        painter.drawText(self.position[0]+10, self.position[1] - 5, self.label)
 
     
 

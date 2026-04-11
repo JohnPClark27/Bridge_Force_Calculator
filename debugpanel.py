@@ -29,5 +29,32 @@ class DebugPanel(QWidget):
         layout.addWidget(self.btn_reactions)
         layout.addWidget(self.btn_applied)
 
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f5f5f5;
+                color: #222222;
+            }
+            QTextEdit {
+                background-color: #ffffff;
+                color: #222222;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 4px;
+            }
+            QPushButton {
+                background-color: #ffffff;
+                color: #222222;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 4px 8px;
+            }
+            QPushButton:hover {
+                background-color: #e8e8e8;
+            }
+            QPushButton:pressed {
+                background-color: #d0d0d0;
+            }
+        """)
+
     def display(self, text):
         self.textBox.setText(text)

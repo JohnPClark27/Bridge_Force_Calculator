@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt, QPoint, QEvent, QTimer, QPointF
 from PySide6.QtGui import QPen
 from node import Node
 from arrow import arrow
+from PySide6.QtGui import QPainter, QPen, QColor
 
 class AppliedForce:
     def __init__(self,id = None):
@@ -14,7 +15,7 @@ class AppliedForce:
         self.magnitude = 1 # 1 node 1 to node 2, -1 node 2 to node 1
         self.force = 0
         self.id = id
-        self.color = Qt.blue
+        self.color = QColor(220, 100, 0)
         self.temp_line = False
 
         self.endnodeSet = False
@@ -53,7 +54,7 @@ class AppliedForce:
 
     def paint(self, painter):
         if (self.is_complete() == False):
-            painter.setPen(QPen(Qt.yellow, 3, Qt.DashLine))
+            painter.setPen(QPen(self.color, 3, Qt.DashLine))
         else:
             painter.setPen(QPen(self.color, 3))
 
@@ -65,11 +66,17 @@ class AppliedForce:
 
             if self.magnitude == 1:
                 arrow(x1, y1, x2, y2, 1).paint(painter)
-                painter.setPen(QPen(Qt.white, 1))
+                painter.setPen(QPen(Qt.black, 2))
+                font = painter.font()
+                font.setBold(True)
+                painter.setFont(font)
                 painter.drawText((x1 + x2) / 2, (y1 + y2) / 2, f"{self.force} N")
             else:  
                 arrow(x1, y1, x2, y2, -1).paint(painter)
-                painter.setPen(QPen(Qt.white, 1))
+                painter.setPen(QPen(Qt.black, 2))
+                font = painter.font()
+                font.setBold(True)
+                painter.setFont(font)
                 painter.drawText((x1 + x2) / 2, (y1 + y2) / 2, f"{self.force} N")
 
         elif self.endpoint is None and self.endnode is not None:
